@@ -1,0 +1,123 @@
+class LibraryManager:
+    def __init__(self):
+        self.books = {}
+        self.user_reading_history = {}
+
+    def add_book(self, title, author, quantity):
+        if quantity <= 0:
+            raise ValueError("La cantidad de libros debe ser mayor a 0")
+        
+        if title in self.books:
+            self.books[title]['quantity'] += quantity
+        else:
+            self.books[title] = {'author': author, 'quantity': quantity}
+
+    def borrow_book(self, user, title):
+        if title not in self.books:
+            return "El libro no está en la biblioteca."
+        
+        if self.books[title]['quantity'] <= 0:
+            return "No hay copias disponibles."
+        
+        self.books[title]['quantity'] -= 1
+        self.user_reading_history.setdefault(user, []).append(title)
+        return f"{user} ha tomado prestado '{title}'."
+
+    def return_book(self, user, title):
+        if title not in self.books:
+            return "Este libro no pertenece a la biblioteca."
+        
+        self.books[title]['quantity'] += 1
+        
+        if user in self.user_reading_history and title in self.user_reading_history[user]:
+            self.user_reading_history[user].remove(title)
+        
+        return f"{user} ha devuelto '{title}'."
+
+    def is_available(self, title):
+        return self.books.get(title, {}).get('quantity', 0) > 0
+
+    def suggest_book(self, user):
+        if user not in self.user_reading_history or not self.user_reading_history[user]:
+            return "No hay historial de lectura para sugerencias."
+        
+        last_read = self.user_reading_history[user][-1]
+        
+        available_books = [book for book in self.books if book != last_read and self.books[book]['quantity'] > 0]
+        
+        return available_books[0] if available_books else "Todos los libros ya han sido leídos."
+
+    def most_popular_books(self):
+        popularity = {}
+        for books in self.user_reading_history.values():
+            for book in books:
+                popularity[book] = popularity.get(book, 0) + 1
+        
+        return sorted(popularity.items(), key=lambda x: x[1], reverse=True)
+
+    def least_popular_books(self):
+        all_books = {book: 0 for book in self.books.keys()}
+        for books in self.user_reading_history.values():
+            for book in books:
+                all_books[book] += 1
+        
+        return sorted(all_books.items(), key=lambda x: x[1])
+
+    def run(self):
+        while True:
+            print("\nGestor de Biblioteca")
+            print("1. Agregar libro")
+            print("2. Prestar libro")
+            print("3. Devolver libro")
+            print("4. Consultar disponibilidad")
+            print("5. Sugerir un libro")
+            print("6. Mostrar libros más prestados")
+            print("7. Mostrar libros menos prestados")
+            print("8. Salir")
+            
+            opcion = input("Elige una opción: ")
+            
+            if opcion == "1":
+                title = input("Título: ")
+                author = input("Autor: ")
+                try:
+                    quantity = int(input("Cantidad: "))
+                    self.add_book(title, author, quantity)
+                    print(f"Libro agregado correctamente: {title} - {author} ({quantity} copias)")
+                except ValueError:
+                    print("Error: La cantidad debe ser un número entero válido.")
+            
+            elif opcion == "2":
+                user = input("Nombre del usuario: ")
+                title = input("Título del libro a prestar: ")
+                print(self.borrow_book(user, title))
+            
+            elif opcion == "3":
+                user = input("Nombre del usuario: ")
+                title = input("Título del libro a devolver: ")
+                print(self.return_book(user, title))
+            
+            elif opcion == "4":
+                title = input("Título del libro: ")
+                print("Disponible" if self.is_available(title) else "No disponible")
+            
+            elif opcion == "5":
+                user = input("Nombre del usuario: ")
+                print("Sugerencia:", self.suggest_book(user))
+            
+            elif opcion == "6":
+                print("Libros más prestados:", self.most_popular_books())
+            
+            elif opcion == "7":
+                print("Libros menos prestados:", self.least_popular_books())
+            
+            elif opcion == "8":
+                print("Saliendo del sistema...")
+                break
+            
+            else:
+                print("Opción no válida, intenta de nuevo.")
+
+if __name__ == "__main__":
+    library = LibraryManager()
+    library.run()
